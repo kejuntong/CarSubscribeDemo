@@ -1,4 +1,4 @@
-import 'package:car_subscribe_demo/hotel_booking/hotel_home_screen.dart';
+import 'package:car_subscribe_demo/screen/vehicle_home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home:const HotelHomeScreen(),
+      home:const VehicleHomeScreen(),
     );
   }
 }

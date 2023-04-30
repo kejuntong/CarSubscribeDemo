@@ -1,7 +1,7 @@
 import 'dart:ffi';
 
 import 'package:car_subscribe_demo/car_list_data.dart';
-import 'package:car_subscribe_demo/hotel_booking/hotel_home_screen.dart';
+import 'package:car_subscribe_demo/screen/vehicle_home_screen.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -10,12 +10,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'hotel_app_theme.dart';
 import 'model/hotel_list_data.dart';
 
-class HotelListView extends StatefulWidget {
+class VehicleListView extends StatefulWidget {
 
   @override
-  State<StatefulWidget> createState() => _HotelListViewState();
+  State<StatefulWidget> createState() => _VehicleListViewState();
 
-  HotelListView(
+  VehicleListView(
       {Key? key,
       this.carData,
       this.animationController,
@@ -25,22 +25,20 @@ class HotelListView extends StatefulWidget {
 
   // final VoidCallback? callback;
   final Function(String val)? onItemClicked;
-  final CarListData? carData;
+  final VehicleInfo? carData;
   final AnimationController? animationController;
   final Animation<double>? animation;
-
-
 }
 
-class _HotelListViewState extends State<HotelListView> {
+class _VehicleListViewState extends State<VehicleListView> {
 
-  final storageRef = FirebaseStorage.instance.ref();
+  final storageRef = FirebaseStorage.instance.ref('vehicles');
   String? imagePath;
 
   @override
   void initState() {
     super.initState();
-    storageRef.child("vehicles/${widget.carData!.carImagePath}").getDownloadURL().then((value) {
+    storageRef.child(widget.carData!.carImagePath).getDownloadURL().then((value) {
       setState(() {
         imagePath = value;
       });

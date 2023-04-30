@@ -1,43 +1,44 @@
 import 'dart:math';
 
+import 'package:car_subscribe_demo/car_list_data.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:unicons/unicons.dart';
 
-class DetailsPage extends StatefulWidget {
-  final String carImage;
-  final String carClass;
-  final String carName;
-  final int carPower;
-  final String people;
-  final String bags;
-  final int carPrice;
-  final String carRating;
-  final bool isRotated;
+import '../hotel_booking/hotel_app_theme.dart';
 
-  const DetailsPage({
+class VehicleDetailsPage extends StatefulWidget {
+  final VehicleInfo vehicleInfo;
+
+  const VehicleDetailsPage({
     Key? key,
-    required this.carImage,
-    required this.carClass,
-    required this.carName,
-    required this.carPower,
-    required this.people,
-    required this.bags,
-    required this.carPrice,
-    required this.carRating,
-    required this.isRotated,
+    required this.vehicleInfo,
   }) : super(key: key);
 
   @override
-  _DetailsPageState createState() => _DetailsPageState();
+  _VehicleDetailsPageState createState() => _VehicleDetailsPageState();
 }
 
-class _DetailsPageState extends State<DetailsPage> {
+class _VehicleDetailsPageState extends State<VehicleDetailsPage> {
+
+  final storageRef = FirebaseStorage.instance.ref('vehicles');
+  String? imagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    storageRef.child(widget.vehicleInfo.carImagePath).getDownloadURL().then((value) {
+      setState(() {
+        imagePath = value;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size; //check the size of device
-    ThemeData themeData = Theme.of(context);
+    ThemeData themeData = HotelAppTheme.buildLightTheme();
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(40.0), //appbar size
@@ -55,7 +56,7 @@ class _DetailsPageState extends State<DetailsPage> {
               width: size.width * 0.1,
               child: InkWell(
                 onTap: () {
-                  Get.back(); //go back to home page
+                  Navigator.of(context).pop();
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -76,13 +77,14 @@ class _DetailsPageState extends State<DetailsPage> {
           automaticallyImplyLeading: false,
           titleSpacing: 0,
           leadingWidth: size.width * 0.15,
-          title: Image.asset(
-            themeData.brightness == Brightness.dark
-                ? 'assets/icons/SobGOGlight.png'
-                : 'assets/icons/SobGOGdark.png',
-            height: size.height * 0.06,
-            width: size.width * 0.35,
-          ),
+          // title: Text("Vehicle Info"),
+          // title: Image.asset(
+          //   themeData.brightness == Brightness.dark
+          //       ? 'assets/icons/SobGOGlight.png'
+          //       : 'assets/icons/SobGOGdark.png',
+          //   height: size.height * 0.06,
+          //   width: size.width * 0.35,
+          // ),
           centerTitle: true,
         ),
       ),
@@ -105,29 +107,19 @@ class _DetailsPageState extends State<DetailsPage> {
                   ListView(
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      widget.isRotated
-                          ? Image.asset(
-                              widget.carImage,
-                              height: size.width * 0.5,
-                              width: size.width * 0.8,
-                              fit: BoxFit.contain,
-                            )
-                          : Transform(
-                              alignment: Alignment.center,
-                              transform: Matrix4.rotationY(pi),
-                              child: Image.asset(
-                                widget.carImage,
-                                height: size.width * 0.5,
-                                width: size.width * 0.8,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
+                      imagePath == null ? Container() :
+                      Image.network(
+                        imagePath!,
+                        height: size.width * 0.5,
+                        width: size.width * 0.8,
+                        fit: BoxFit.contain,
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.carClass,
+                            widget.vehicleInfo.carClass,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               color: themeData.primaryColor,
@@ -142,7 +134,7 @@ class _DetailsPageState extends State<DetailsPage> {
                             size: size.width * 0.06,
                           ),
                           Text(
-                            widget.carRating,
+                            "niu b",
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               color: Colors.yellow[800],
@@ -155,7 +147,7 @@ class _DetailsPageState extends State<DetailsPage> {
                       Row(
                         children: [
                           Text(
-                            widget.carName,
+                            widget.vehicleInfo.carName,
                             textAlign: TextAlign.left,
                             style: GoogleFonts.poppins(
                               color: themeData.primaryColor,
@@ -165,7 +157,7 @@ class _DetailsPageState extends State<DetailsPage> {
                           ),
                           const Spacer(),
                           Text(
-                            '${widget.carPrice}\$',
+                            '${widget.vehicleInfo.monthlyPrice}\$',
                             style: GoogleFonts.poppins(
                               color: themeData.primaryColor,
                               fontSize: size.width * 0.04,
@@ -191,22 +183,22 @@ class _DetailsPageState extends State<DetailsPage> {
                           children: [
                             buildStat(
                               UniconsLine.dashboard,
-                              '${widget.carPower} KM',
-                              'Power',
+                              '${widget.vehicleInfo.carMileage} KM',
+                              'Mileage',
                               size,
                               themeData,
                             ),
                             buildStat(
                               UniconsLine.users_alt,
                               'People',
-                              '( ${widget.people} )',
+                              '( ${widget.vehicleInfo.seats} )',
                               size,
                               themeData,
                             ),
                             buildStat(
                               UniconsLine.briefcase,
                               'Bags',
-                              '( ${widget.bags} )',
+                              '( ${widget.vehicleInfo.bags} )',
                               size,
                               themeData,
                             ),

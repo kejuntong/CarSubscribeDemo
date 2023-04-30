@@ -5,28 +5,28 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import '../cars.dart';
-import '../screen/details_page.dart';
-import 'calendar_popup_view.dart';
-import 'filters_screen.dart';
-import 'hotel_app_theme.dart';
-import 'hotel_list_view.dart';
-import 'model/hotel_list_data.dart';
+import 'vehicle_details_page.dart';
+import '../hotel_booking/calendar_popup_view.dart';
+import '../hotel_booking/filters_screen.dart';
+import '../hotel_booking/hotel_app_theme.dart';
+import '../hotel_booking/vehicle_list_view.dart';
+import '../hotel_booking/model/hotel_list_data.dart';
 
-class HotelHomeScreen extends StatefulWidget {
-  const HotelHomeScreen({super.key});
+class VehicleHomeScreen extends StatefulWidget {
+  const VehicleHomeScreen({super.key});
 
   @override
-  _HotelHomeScreenState createState() => _HotelHomeScreenState();
+  _VehicleHomeScreenState createState() => _VehicleHomeScreenState();
 }
 
-class _HotelHomeScreenState extends State<HotelHomeScreen>
+class _VehicleHomeScreenState extends State<VehicleHomeScreen>
     with TickerProviderStateMixin {
 
   final vehiclesDatabaseRef = FirebaseDatabase.instance.ref('vehicles');
   final storageRef = FirebaseStorage.instance.ref();
 
   AnimationController? animationController;
-  List<CarListData> carListData = <CarListData>[];
+  List<VehicleInfo> carListData = <VehicleInfo>[];
   final ScrollController _scrollController = ScrollController();
 
   DateTime startDate = DateTime.now();
@@ -37,20 +37,10 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
     animationController = AnimationController(
         duration: const Duration(milliseconds: 1000), vsync: this);
 
-
     vehiclesDatabaseRef.onValue.listen((DatabaseEvent event) {
-      List<CarListData> list = <CarListData>[];
+      List<VehicleInfo> list = <VehicleInfo>[];
       for (final child in event.snapshot.children) {
-        print("kejun test getting vehicle from firebase: " + child.value.toString());
-        // list.add(child.value as CarListData);
-
-        Map<dynamic, dynamic> carMap = child.value as Map;
-        list.add(CarListData(carClass: carMap["car_class"],
-            carImagePath: carMap["car_image"],
-            carMileage: carMap["car_mileage"],
-            carName: carMap["car_name"],
-            monthlyPrice: carMap["monthly_price"].toDouble()));
-
+        list.add(VehicleInfo.fromFirebaseObj(child.value));
       }
       setState(() {
         carListData = list;
@@ -134,23 +124,13 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
                                               (1 / count) * index, 1.0,
                                               curve: Curves.fastOutSlowIn)));
                               animationController?.forward();
-                              return HotelListView(
+                              return VehicleListView(
                                 onItemClicked: (String title) {
                                   print("kejun test: $title");
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                         builder: (context) =>
-                                            DetailsPage(
-                                              carImage: cars[0]['carImage'],
-                                              carClass: cars[0]['carClass'],
-                                              carName: cars[0]['carName'],
-                                              carPower: cars[0]['carPower'],
-                                              people: cars[0]['people'],
-                                              bags: cars[0]['bags'],
-                                              carPrice: cars[0]['carPrice'],
-                                              carRating: cars[0]['carRating'],
-                                              isRotated: cars[0]['isRotated'],
-                                            )),
+                                            VehicleDetailsPage(vehicleInfo: carListData[index],)),
                                   );
                                 },
                                 carData: carListData[index],
@@ -400,7 +380,7 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
                     cursorColor: HotelAppTheme.buildLightTheme().primaryColor,
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: 'London...',
+                      hintText: 'Toronto...',
                     ),
                   ),
                 ),
