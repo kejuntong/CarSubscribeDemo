@@ -1,6 +1,11 @@
+import 'package:car_subscribe_demo/car_list_data.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import '../cars.dart';
+import '../screen/details_page.dart';
 import 'calendar_popup_view.dart';
 import 'filters_screen.dart';
 import 'hotel_app_theme.dart';
@@ -16,8 +21,12 @@ class HotelHomeScreen extends StatefulWidget {
 
 class _HotelHomeScreenState extends State<HotelHomeScreen>
     with TickerProviderStateMixin {
+
+  final vehiclesDatabaseRef = FirebaseDatabase.instance.ref('vehicles');
+  final storageRef = FirebaseStorage.instance.ref();
+
   AnimationController? animationController;
-  List<HotelListData> hotelList = HotelListData.hotelList;
+  List<CarListData> carListData = <CarListData>[];
   final ScrollController _scrollController = ScrollController();
 
   DateTime startDate = DateTime.now();
@@ -27,6 +36,27 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
   void initState() {
     animationController = AnimationController(
         duration: const Duration(milliseconds: 1000), vsync: this);
+
+
+    vehiclesDatabaseRef.onValue.listen((DatabaseEvent event) {
+      List<CarListData> list = <CarListData>[];
+      for (final child in event.snapshot.children) {
+        print("kejun test getting vehicle from firebase: " + child.value.toString());
+        // list.add(child.value as CarListData);
+
+        Map<dynamic, dynamic> carMap = child.value as Map;
+        list.add(CarListData(carClass: carMap["car_class"],
+            carImagePath: carMap["car_image"],
+            carMileage: carMap["car_mileage"],
+            carName: carMap["car_name"],
+            monthlyPrice: carMap["monthly_price"].toDouble()));
+
+      }
+      setState(() {
+        carListData = list;
+      });
+    });
+
     super.initState();
   }
 
@@ -90,12 +120,12 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
                           color:
                               HotelAppTheme.buildLightTheme().backgroundColor,
                           child: ListView.builder(
-                            itemCount: hotelList.length,
+                            itemCount: carListData.length,
                             padding: const EdgeInsets.only(top: 8),
                             scrollDirection: Axis.vertical,
                             itemBuilder: (BuildContext context, int index) {
                               final int count =
-                                  hotelList.length > 10 ? 10 : hotelList.length;
+                                  carListData.length > 10 ? 10 : carListData.length;
                               final Animation<double> animation =
                                   Tween<double>(begin: 0.0, end: 1.0).animate(
                                       CurvedAnimation(
@@ -105,8 +135,25 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
                                               curve: Curves.fastOutSlowIn)));
                               animationController?.forward();
                               return HotelListView(
-                                callback: () {},
-                                hotelData: hotelList[index],
+                                onItemClicked: (String title) {
+                                  print("kejun test: $title");
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            DetailsPage(
+                                              carImage: cars[0]['carImage'],
+                                              carClass: cars[0]['carClass'],
+                                              carName: cars[0]['carName'],
+                                              carPower: cars[0]['carPower'],
+                                              people: cars[0]['people'],
+                                              bags: cars[0]['bags'],
+                                              carPrice: cars[0]['carPrice'],
+                                              carRating: cars[0]['carRating'],
+                                              isRotated: cars[0]['isRotated'],
+                                            )),
+                                  );
+                                },
+                                carData: carListData[index],
                                 animation: animation,
                                 animationController: animationController!,
                               );
@@ -125,83 +172,83 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
     );
   }
 
-  Widget getListUI() {
-    return Container(
-      decoration: BoxDecoration(
-        color: HotelAppTheme.buildLightTheme().backgroundColor,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              offset: const Offset(0, -2),
-              blurRadius: 8.0),
-        ],
-      ),
-      child: Column(
-        children: <Widget>[
-          Container(
-            height: MediaQuery.of(context).size.height - 156 - 50,
-            child: FutureBuilder<bool>(
-              future: getData(),
-              builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
-                if (!snapshot.hasData) {
-                  return const SizedBox();
-                } else {
-                  return ListView.builder(
-                    itemCount: hotelList.length,
-                    scrollDirection: Axis.vertical,
-                    itemBuilder: (BuildContext context, int index) {
-                      final int count =
-                          hotelList.length > 10 ? 10 : hotelList.length;
-                      final Animation<double> animation =
-                          Tween<double>(begin: 0.0, end: 1.0).animate(
-                              CurvedAnimation(
-                                  parent: animationController!,
-                                  curve: Interval((1 / count) * index, 1.0,
-                                      curve: Curves.fastOutSlowIn)));
-                      animationController?.forward();
-
-                      return HotelListView(
-                        callback: () {},
-                        hotelData: hotelList[index],
-                        animation: animation,
-                        animationController: animationController!,
-                      );
-                    },
-                  );
-                }
-              },
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget getHotelViewList() {
-    final List<Widget> hotelListViews = <Widget>[];
-    for (int i = 0; i < hotelList.length; i++) {
-      final int count = hotelList.length;
-      final Animation<double> animation =
-          Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: animationController!,
-          curve: Interval((1 / count) * i, 1.0, curve: Curves.fastOutSlowIn),
-        ),
-      );
-      hotelListViews.add(
-        HotelListView(
-          callback: () {},
-          hotelData: hotelList[i],
-          animation: animation,
-          animationController: animationController!,
-        ),
-      );
-    }
-    animationController?.forward();
-    return Column(
-      children: hotelListViews,
-    );
-  }
+  // Widget getListUI() {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: HotelAppTheme.buildLightTheme().backgroundColor,
+  //       boxShadow: <BoxShadow>[
+  //         BoxShadow(
+  //             color: Colors.grey.withOpacity(0.2),
+  //             offset: const Offset(0, -2),
+  //             blurRadius: 8.0),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       children: <Widget>[
+  //         Container(
+  //           height: MediaQuery.of(context).size.height - 156 - 50,
+  //           child: FutureBuilder<bool>(
+  //             future: getData(),
+  //             builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+  //               if (!snapshot.hasData) {
+  //                 return const SizedBox();
+  //               } else {
+  //                 return ListView.builder(
+  //                   itemCount: hotelList.length,
+  //                   scrollDirection: Axis.vertical,
+  //                   itemBuilder: (BuildContext context, int index) {
+  //                     final int count =
+  //                         hotelList.length > 10 ? 10 : hotelList.length;
+  //                     final Animation<double> animation =
+  //                         Tween<double>(begin: 0.0, end: 1.0).animate(
+  //                             CurvedAnimation(
+  //                                 parent: animationController!,
+  //                                 curve: Interval((1 / count) * index, 1.0,
+  //                                     curve: Curves.fastOutSlowIn)));
+  //                     animationController?.forward();
+  //
+  //                     return HotelListView(
+  //                       callback: () {},
+  //                       hotelData: hotelList[index],
+  //                       animation: animation,
+  //                       animationController: animationController!,
+  //                     );
+  //                   },
+  //                 );
+  //               }
+  //             },
+  //           ),
+  //         )
+  //       ],
+  //     ),
+  //   );
+  // }
+  //
+  // Widget getHotelViewList() {
+  //   final List<Widget> hotelListViews = <Widget>[];
+  //   for (int i = 0; i < hotelList.length; i++) {
+  //     final int count = hotelList.length;
+  //     final Animation<double> animation =
+  //         Tween<double>(begin: 0.0, end: 1.0).animate(
+  //       CurvedAnimation(
+  //         parent: animationController!,
+  //         curve: Interval((1 / count) * i, 1.0, curve: Curves.fastOutSlowIn),
+  //       ),
+  //     );
+  //     hotelListViews.add(
+  //       HotelListView(
+  //         callback: () {},
+  //         hotelData: hotelList[i],
+  //         animation: animation,
+  //         animationController: animationController!,
+  //       ),
+  //     );
+  //   }
+  //   animationController?.forward();
+  //   return Column(
+  //     children: hotelListViews,
+  //   );
+  // }
 
   Widget getTimeDateUI() {
     return Padding(
@@ -539,7 +586,20 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
                     Radius.circular(32.0),
                   ),
                   onTap: () {
-                    Navigator.pop(context);
+                    // Navigator.pop(context);
+                    print("kejun test........");
+
+                    // DatabaseReference ref = FirebaseDatabase.instance.ref("vehicle/car_1");
+                    //
+                    // ref.set({
+                    //   "car_name": "Hyundai i30 N 2021",
+                    //   "car_class": "Sport",
+                    //   "car_mileage": 3,
+                    //   "monthly_price": 500,
+                    //   "car_image": "tbd"
+                    // });
+
+
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -551,7 +611,7 @@ class _HotelHomeScreenState extends State<HotelHomeScreen>
             Expanded(
               child: Center(
                 child: Text(
-                  'Explore',
+                  'Axle Club',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 22,

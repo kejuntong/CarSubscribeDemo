@@ -29,6 +29,13 @@
             {
               "client_id": "657076711735-98ujff6313it8lk398rcmon90bsbpq22.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "657076711735-gidtd9co0vo909en3bl1cchlj50tpge4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.carSubscribeDemo"
+              }
             }
           ]
         }
